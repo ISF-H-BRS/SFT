@@ -73,8 +73,10 @@ target_link_libraries(ctest_complex sft ${SFT_LIBM})
 ##  Fixed  #########################################################################################
 
 add_executable(fixed_real fixed.cpp)
+target_link_libraries(fixed_real sft_fixed)
 
 add_executable(fixed_complex fixed.cpp)
 target_compile_definitions(fixed_complex PUBLIC TEST_COMPLEX)
+target_link_libraries(fixed_complex sft_fixed)
 
 ####################################################################################################

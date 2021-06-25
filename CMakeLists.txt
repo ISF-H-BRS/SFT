@@ -26,7 +26,7 @@ cmake_minimum_required(VERSION 3.13)
 
 set(SFT_VERSION_MAJOR 1)
 set(SFT_VERSION_MINOR 0)
-set(SFT_VERSION_PATCH 0)
+set(SFT_VERSION_PATCH 1)
 set(SFT_VERSION ${SFT_VERSION_MAJOR}.${SFT_VERSION_MINOR}.${SFT_VERSION_PATCH} )
 
 set(SFT_BUILD_EXAMPLES OFF CACHE BOOL "Build example programs")
@@ -79,29 +79,46 @@ endif()
 
 ##  Headers  #######################################################################################
 
-include_directories(include/sft)
+set(SFT_INCLUDE_DIR
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/sft>
+    $<INSTALL_INTERFACE:include/sft>)
 
 ##  Double-precision, single-threaded  #############################################################
 
 add_library(sft SHARED sft.cpp)
+target_include_directories(sft PUBLIC ${SFT_INCLUDE_DIR})
 
 ##  Single-precision, single-threaded  #############################################################
 
 add_library(sftf SHARED sft.cpp)
+target_include_directories(sftf PUBLIC ${SFT_INCLUDE_DIR})
 target_compile_definitions(sftf PUBLIC SFT_SINGLE_PRECISION)
 
 ##  Double-precision, multi-threaded  ##############################################################
 
 add_library(sft_parallel SHARED sft.cpp)
+target_include_directories(sft_parallel PUBLIC ${SFT_INCLUDE_DIR})
 target_compile_options(sft_parallel PUBLIC ${SFT_OMP_FLAG})
 target_link_libraries(sft_parallel ${SFT_LIBOMP})
 
 ##  Single-precision, multi-threaded  ##############################################################
 
 add_library(sftf_parallel SHARED sft.cpp)
+target_include_directories(sftf_parallel PUBLIC ${SFT_INCLUDE_DIR})
 target_compile_definitions(sftf_parallel PUBLIC SFT_SINGLE_PRECISION)
 target_compile_options(sftf_parallel PUBLIC ${SFT_OMP_FLAG})
 target_link_libraries(sftf_parallel ${SFT_LIBOMP})
+
+##  Double-precision, fixed  #######################################################################
+
+add_library(sft_fixed INTERFACE)
+target_include_directories(sft_fixed INTERFACE ${SFT_INCLUDE_DIR})
+
+##  Single-precision, fixed  #######################################################################
+
+add_library(sftf_fixed INTERFACE)
+target_include_directories(sftf_fixed INTERFACE ${SFT_INCLUDE_DIR})
+target_compile_definitions(sftf_fixed INTERFACE SFT_SINGLE_PRECISION)
 
 ##  Library version  ###############################################################################
 
@@ -117,10 +134,33 @@ if (WIN32)
     set_property(TARGET sft sftf sft_parallel sftf_parallel PROPERTY PREFIX "")
 endif()
 
+##  Config files  ##################################################################################
+
+include(CMakePackageConfigHelpers)
+
+set(SFT_CMAKE_CONFIG_PATH lib/cmake/sft)
+set(INCLUDE_INSTALL_DIR include/sft)
+
+configure_package_config_file(sft-config.cmake.in
+                              ${CMAKE_CURRENT_BINARY_DIR}/sft-config.cmake
+                              INSTALL_DESTINATION ${SFT_CMAKE_CONFIG_PATH}
+                              PATH_VARS INCLUDE_INSTALL_DIR)
+
+write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/sft-config-version.cmake
+                                 VERSION ${SFT_VERSION}
+                                 COMPATIBILITY SameMajorVersion)
+
 ##  Install  #######################################################################################
 
-install(TARGETS sft sftf sft_parallel sftf_parallel DESTINATION lib)
+install(TARGETS sft sftf sft_parallel sftf_parallel sft_fixed sftf_fixed
+        EXPORT sft-targets DESTINATION lib)
+
 install(DIRECTORY include/ DESTINATION include)
+install(EXPORT sft-targets DESTINATION ${SFT_CMAKE_CONFIG_PATH})
+
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sft-config.cmake
+              ${CMAKE_CURRENT_BINARY_DIR}/sft-config-version.cmake
+        DESTINATION ${SFT_CMAKE_CONFIG_PATH})
 
 ##  Examples  ######################################################################################
 
