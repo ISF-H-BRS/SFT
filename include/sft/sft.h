@@ -5,7 +5,7 @@
 //  Author:                                                                                       //
 //  Marcel Hasler <marcel.hasler@h-brs.de>                                                        //
 //                                                                                                //
-//  Copyright (c) 2020 - 2021                                                                     //
+//  Copyright (c) 2020 - 2022                                                                     //
 //  Bonn-Rhein-Sieg University of Applied Sciences                                                //
 //                                                                                                //
 //  This library is free software: you can redistribute it and/or modify it under the terms of    //

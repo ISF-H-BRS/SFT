@@ -5,7 +5,7 @@
 //  Author:                                                                                       //
 //  Marcel Hasler <marcel.hasler@h-brs.de>                                                        //
 //                                                                                                //
-//  Copyright (c) 2020 - 2021                                                                     //
+//  Copyright (c) 2020 - 2022                                                                     //
 //  Bonn-Rhein-Sieg University of Applied Sciences                                                //
 //                                                                                                //
 //  This library is free software: you can redistribute it and/or modify it under the terms of    //
@@ -742,7 +742,7 @@ template <size_t... Radices>
 void FixedContext<Complex, Radices...>::transformInverse(Span<const Complex> input,
                                                          Span<Complex> output) const
 {
-    assert(output.size() == Size && input.size() == Size + 1);
+    assert(output.size() == Size && input.size() == Size);
 
     const IndexArray& reverseIndices = FixedContextBase<Radices...>::reverseIndices();
 
@@ -752,7 +752,9 @@ void FixedContext<Complex, Radices...>::transformInverse(Span<const Complex> inp
     FixedContextBase<Radices...>::transform(output);
 
     const auto scale = static_cast<Real>(1) / Size;
-    std::for_each(output.begin(), output.end(), [&](Complex& c) { c *= scale; });
+
+    for (size_t i = 0; i < Size; ++i)
+        output[i] = scale * std::conj(output[i]);
 }
 
 // ---------------------------------------------------------------------------------------------- //

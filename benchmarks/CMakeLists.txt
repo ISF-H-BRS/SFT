@@ -21,62 +21,32 @@
 #                                                                                                  #
 ####################################################################################################
 
-message("Building examples.")
+message("Building benchmarks.")
 
-##  Real  ##########################################################################################
+##  Single-threaded  ###############################################################################
 
-add_executable(test_real test.cpp)
-target_link_libraries(test_real sft)
+add_executable(benchmark benchmark.cpp)
+target_link_libraries(benchmark sft)
 
-add_executable(test_real_parallel test.cpp)
-target_link_libraries(test_real_parallel sft_parallel)
+add_executable(benchmark_float benchmark.cpp)
+target_link_libraries(benchmark_float sftf)
 
-add_executable(test_real_float test.cpp)
-target_link_libraries(test_real_float sftf)
+##  Multi-threaded  ################################################################################
 
-add_executable(test_real_float_parallel test.cpp)
-target_link_libraries(test_real_float_parallel sftf_parallel)
+add_executable(benchmark_parallel benchmark.cpp)
+target_link_libraries(benchmark_parallel sft_parallel)
 
-##  Complex  #######################################################################################
-
-add_executable(test_complex test.cpp)
-target_compile_definitions(test_complex PUBLIC TEST_COMPLEX)
-target_link_libraries(test_complex sft)
-
-add_executable(test_complex_parallel test.cpp)
-target_compile_definitions(test_complex_parallel PUBLIC TEST_COMPLEX)
-target_link_libraries(test_complex_parallel sft_parallel)
-
-add_executable(test_complex_float test.cpp)
-target_compile_definitions(test_complex_float PUBLIC TEST_COMPLEX)
-target_link_libraries(test_complex_float sftf)
-
-add_executable(test_complex_float_parallel test.cpp)
-target_compile_definitions(test_complex_float_parallel PUBLIC TEST_COMPLEX)
-target_link_libraries(test_complex_float_parallel sftf_parallel)
-
-##  C API  #########################################################################################
-
-if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    set(SFT_LIBM "")
-else()
-    set(SFT_LIBM m)
-endif()
-
-add_executable(ctest_real test.c)
-target_link_libraries(ctest_real sft ${SFT_LIBM})
-
-add_executable(ctest_complex test.c)
-target_compile_definitions(ctest_complex PUBLIC TEST_COMPLEX)
-target_link_libraries(ctest_complex sft ${SFT_LIBM})
+add_executable(benchmark_float_parallel benchmark.cpp)
+target_link_libraries(benchmark_float_parallel sftf_parallel)
 
 ##  Fixed  #########################################################################################
 
-add_executable(fixed_real fixed.cpp)
-target_link_libraries(fixed_real sft_fixed)
+add_executable(benchmark_fixed benchmark.cpp)
+target_compile_definitions(benchmark_fixed PRIVATE BENCHMARK_FIXED)
+target_link_libraries(benchmark_fixed sft_fixed)
 
-add_executable(fixed_complex fixed.cpp)
-target_compile_definitions(fixed_complex PUBLIC TEST_COMPLEX)
-target_link_libraries(fixed_complex sft_fixed)
+add_executable(benchmark_float_fixed benchmark.cpp)
+target_compile_definitions(benchmark_float_fixed PRIVATE BENCHMARK_FIXED)
+target_link_libraries(benchmark_float_fixed sftf_fixed)
 
 ####################################################################################################

@@ -23,9 +23,11 @@ The build system will produce four distinct library versions:
 
 The multi-threaded versions make use of the compiler's OpenMP support.
 
-What version to use depends on your hardware architecture and execution environment. On recent 64-bit processors the speed gained from using single-precision arithmetic is usually negligible, whereas 32-bit architectures may profit significantly.
+What version to use depends on your hardware architecture and execution environment. On recent 64-bit processors the speed gained from using single-precision arithmetic is often negligible, whereas 32-bit architectures may profit significantly.
 
 Unless multiple FFTs are to be computed simultaneously, the parallel versions will typically perform significantly better on multi-core or multi-processor systems than the single-threaded versions. This is especially true for large data sets.
+
+Have a look at the [benchmark results](Benchmarks.md) to get an idea of what performance gains can be expected.
 
 ## License
 
@@ -73,7 +75,7 @@ context.transformInverse(output, inverse);
 
 ### Transforming Complex-valued Data
 
-The process for transforming complex-valued data is almost identical, except that the number of input and output samples must match.
+The process for transforming complex-valued data is almost identical, except that the number of input and output samples must match. In addition, the input and output buffers must be distinct, in-place transforms are currently not supported.
 
 ```cpp
 sft::Context<sft::Complex> context(InputSize);
@@ -200,7 +202,8 @@ context.transformInverse(output, inverse);
 
 SFT uses [CMake](https://cmake.org/) to build. There are two options that can be specified when building:
 
-- **SFT_BUILD_EXAMPLES**: Builds various example programs to demonstrate the usage of the library
+- **SFT_BUILD_EXAMPLES**: Builds example programs to demonstrate the usage of the library
+- **SFT_BUILD_BENCHMARKS**: Builds benchmarks to measure execution times for various input sizes
 - **SFT_NO_AVX**: Disables AVX instructions for x86_64 targets that don't support them
 
 On Unix systems the usual sequence can be run from the command line to build and install the library:
@@ -227,9 +230,9 @@ SFT has so far been tested and confirmed to work using the following compilers:
 - GCC 9.3.1 (Bare-metal, cortex-m4, fixed-size only)
 - GCC 10.2.0 (Linux, aarch64)
 - GCC 10.2.0 (Linux, armv7l)
-- GCC 11.1.0 (Linux, x86_64)
+- GCC 11.2.0 (Linux, x86_64)
 - GCC 10.3.0 (Windows, i686)
-- GCC 10.3.0 (Windows, x86_64)
+- GCC 11.2.0 (Windows, x86_64)
 - MSVC 16.9 (Windows, x86_64)
 
 Other recent compilers and target platforms are likely to work as well, but may require adjustments to the CMake build file.

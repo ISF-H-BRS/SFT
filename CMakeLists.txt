@@ -5,7 +5,7 @@
 #   Author:                                                                                        #
 #   Marcel Hasler <marcel.hasler@h-brs.de>                                                         #
 #                                                                                                  #
-#   Copyright (c) 2020 - 2021                                                                      #
+#   Copyright (c) 2020 - 2022                                                                      #
 #   Bonn-Rhein-Sieg University of Applied Sciences                                                 #
 #                                                                                                  #
 #   This library is free software: you can redistribute it and/or modify it under the terms of     #
@@ -26,10 +26,11 @@ cmake_minimum_required(VERSION 3.13)
 
 set(SFT_VERSION_MAJOR 1)
 set(SFT_VERSION_MINOR 0)
-set(SFT_VERSION_PATCH 1)
+set(SFT_VERSION_PATCH 2)
 set(SFT_VERSION ${SFT_VERSION_MAJOR}.${SFT_VERSION_MINOR}.${SFT_VERSION_PATCH} )
 
 set(SFT_BUILD_EXAMPLES OFF CACHE BOOL "Build example programs")
+set(SFT_BUILD_BENCHMARKS OFF CACHE BOOL "Build benchmark programs")
 set(SFT_NO_AVX OFF CACHE BOOL "Disable AVX support on x86_64")
 
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -166,6 +167,12 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sft-config.cmake
 
 if (SFT_BUILD_EXAMPLES)
     add_subdirectory(examples)
+endif()
+
+##  Benchmarks  ####################################################################################
+
+if (SFT_BUILD_BENCHMARKS)
+    add_subdirectory(benchmarks)
 endif()
 
 ####################################################################################################

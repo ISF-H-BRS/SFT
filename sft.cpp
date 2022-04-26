@@ -5,7 +5,7 @@
 //  Author:                                                                                       //
 //  Marcel Hasler <marcel.hasler@h-brs.de>                                                        //
 //                                                                                                //
-//  Copyright (c) 2020 - 2021                                                                     //
+//  Copyright (c) 2020 - 2022                                                                     //
 //  Bonn-Rhein-Sieg University of Applied Sciences                                                //
 //                                                                                                //
 //  This library is free software: you can redistribute it and/or modify it under the terms of    //
@@ -36,6 +36,7 @@ using namespace sft;
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <iostream>
 #include <mutex>
 #include <numeric>
 #include <vector>
@@ -52,12 +53,17 @@ using namespace sft;
 #include <windows.h>
 #endif
 
-#define _SFT_OMP_PARALLEL_PRAGMA1 _Pragma("omp parallel for if (size >= MinimumParallelSize)")
-#define _SFT_OMP_PARALLEL_PRAGMA2 _Pragma("omp parallel for collapse(2) \
-                                           if (size >= MinimumParallelSize)")
+#define DO_PRAGMA_(x) _Pragma(#x)
+#define DO_PRAGMA(x) DO_PRAGMA_(x)
+
+#define _SFT_OMP_PARALLEL_PRAGMA(size)          DO_PRAGMA(omp parallel for \
+                                                          if (size >= MinimumParallelSize))
+
+#define _SFT_OMP_PARALLEL_PRAGMA_COLLAPSE(size) DO_PRAGMA(omp parallel for collapse(2) \
+                                                          if (size >= MinimumParallelSize))
 #else
-#define _SFT_OMP_PARALLEL_PRAGMA1
-#define _SFT_OMP_PARALLEL_PRAGMA2
+#define _SFT_OMP_PARALLEL_PRAGMA(size)
+#define _SFT_OMP_PARALLEL_PRAGMA_COLLAPSE(size)
 #endif // _OPENMP
 
 // ---------------------------------------------------------------------------------------------- //
@@ -76,7 +82,7 @@ namespace {
 // ---------------------------------------------------------------------------------------------- //
 
 static inline
-auto operator/(const Complex& lhs, unsigned int rhs) -> Complex
+auto operator/(const Complex& lhs, size_t rhs) -> Complex
 {
     return lhs / static_cast<Real>(rhs);
 }
@@ -87,6 +93,14 @@ static inline
 auto isMultipleOf(size_t n, size_t d) -> bool
 {
     return (n >= d) && (n % d == 0);
+}
+
+// ---------------------------------------------------------------------------------------------- //
+
+static inline
+void logError(const char* msg)
+{
+    std::cerr << "[SFT] Error: " << msg << std::endl;
 }
 
 // ---------------------------------------------------------------------------------------------- //
@@ -190,6 +204,7 @@ RadixStage<Radix>::RadixStage(size_t size)
     {
         m_factors[i].resize(m_subSize);
 
+        _SFT_OMP_PARALLEL_PRAGMA(m_subSize)
         for (size_t j = 0; j < m_subSize; ++j)
             m_factors[i][j] = std::exp(-TwoPi * i * j * I / m_size);
     }
@@ -202,7 +217,7 @@ void RadixStage<2>::transform(Span<Complex> data) const
 {
     const size_t size = data.size();
 
-    _SFT_OMP_PARALLEL_PRAGMA2
+    _SFT_OMP_PARALLEL_PRAGMA_COLLAPSE(size)
     for (size_t i = 0; i < size; i += m_size)
     {
         for (size_t j = 0; j < m_subSize; ++j)
@@ -238,7 +253,7 @@ void RadixStage<3>::transform(Span<Complex> data) const
 
     const size_t size = data.size();
 
-    _SFT_OMP_PARALLEL_PRAGMA2
+    _SFT_OMP_PARALLEL_PRAGMA_COLLAPSE(size)
     for (size_t i = 0; i < size; i += m_size)
     {
         for (size_t j = 0; j < m_subSize; ++j)
@@ -272,7 +287,7 @@ void RadixStage<4>::transform(Span<Complex> data) const
 
     const size_t size = data.size();
 
-    _SFT_OMP_PARALLEL_PRAGMA2
+    _SFT_OMP_PARALLEL_PRAGMA_COLLAPSE(size)
     for (size_t i = 0; i < size; i += m_size)
     {
         for (size_t j = 0; j < m_subSize; ++j)
@@ -320,7 +335,7 @@ void RadixStage<5>::transform(Span<Complex> data) const
 
     const size_t size = data.size();
 
-    _SFT_OMP_PARALLEL_PRAGMA2
+    _SFT_OMP_PARALLEL_PRAGMA_COLLAPSE(size)
     for (size_t i = 0; i < size; i += m_size)
     {
         for (size_t j = 0; j < m_subSize; ++j)
@@ -401,7 +416,7 @@ void RadixStage<7>::transform(Span<Complex> data) const
 
     const size_t size = data.size();
 
-    _SFT_OMP_PARALLEL_PRAGMA2
+    _SFT_OMP_PARALLEL_PRAGMA_COLLAPSE(size)
     for (size_t i = 0; i < size; i += m_size)
     {
         for (size_t j = 0; j < m_subSize; ++j)
@@ -556,7 +571,7 @@ public:
     void transformInverse(Span<const Complex> input, Span<Complex> output) const;
 
 private:
-    void checkSize(size_t inputSize, size_t outputSize) const;
+    void checkArgs(Span<const Complex> input, Span<Complex> output) const;
 };
 
 // ============================================================================================== //
@@ -700,12 +715,13 @@ void Context<Real>::Private::transform(Span<const Real> input, Span<Complex> out
 
     std::lock_guard guard(m_mutex);
 
+    _SFT_OMP_PARALLEL_PRAGMA(size)
     for (size_t i = 0; i < size; ++i)
         m_data[reverseIndices[i]] = { input[2*i], input[2*i + 1] };
 
     ContextBase::transform(m_data);
 
-    _SFT_OMP_PARALLEL_PRAGMA1
+    _SFT_OMP_PARALLEL_PRAGMA(size)
     for (size_t i = 0; i < size; ++i)
     {
         const size_t index0 = i;
@@ -729,7 +745,7 @@ void Context<Real>::Private::transformInverse(Span<const Complex> input, Span<Re
 
     std::lock_guard guard(m_mutex);
 
-    _SFT_OMP_PARALLEL_PRAGMA1
+    _SFT_OMP_PARALLEL_PRAGMA(size)
     for (size_t i = 0; i < size; ++i)
     {
         const size_t index0 = i;
@@ -745,6 +761,7 @@ void Context<Real>::Private::transformInverse(Span<const Complex> input, Span<Re
 
     const auto scale = static_cast<Real>(1) / size;
 
+    _SFT_OMP_PARALLEL_PRAGMA(size)
     for (size_t i = 0; i < size; ++i)
     {
         const Complex value = scale * std::conj(m_data[i]);
@@ -773,7 +790,7 @@ void Context<Real>::Private::computeFactors()
 
     const size_t size = ContextBase::size();
 
-    _SFT_OMP_PARALLEL_PRAGMA1
+    _SFT_OMP_PARALLEL_PRAGMA(size)
     for (size_t i = 0; i < size; ++i)
     {
         const Complex factor = I * std::exp(-Pi * i * I / size);
@@ -805,11 +822,12 @@ Context<Complex>::Private::Private(size_t size)
 
 void Context<Complex>::Private::transform(Span<const Complex> input, Span<Complex> output) const
 {
-    checkSize(input.size(), output.size());
+    checkArgs(input, output);
 
     const size_t size = ContextBase::size();
     const IndexList& reverseIndices = ContextBase::reverseIndices();
 
+    _SFT_OMP_PARALLEL_PRAGMA(size)
     for (size_t i = 0; i < size; ++i)
         output[reverseIndices[i]] = input[i];
 
@@ -821,29 +839,36 @@ void Context<Complex>::Private::transform(Span<const Complex> input, Span<Comple
 void Context<Complex>::Private::transformInverse(Span<const Complex> input,
                                                  Span<Complex> output) const
 {
-    checkSize(input.size(), output.size());
+    checkArgs(input, output);
 
     const size_t size = ContextBase::size();
     const IndexList& reverseIndices = ContextBase::reverseIndices();
 
+    _SFT_OMP_PARALLEL_PRAGMA(size)
     for (size_t i = 0; i < size; ++i)
         output[reverseIndices[i]] = std::conj(input[i]);
 
     ContextBase::transform(output);
 
     const auto scale = static_cast<Real>(1) / size;
-    std::for_each(output.begin(), output.end(), [&](Complex& c) { c *= scale; });
+
+    _SFT_OMP_PARALLEL_PRAGMA(size)
+    for (size_t i = 0; i < size; ++i)
+        output[i] = scale * std::conj(output[i]);
 }
 
 // ---------------------------------------------------------------------------------------------- //
 
-void Context<Complex>::Private::checkSize(size_t inputSize, size_t outputSize) const
+void Context<Complex>::Private::checkArgs(Span<const Complex> input, Span<Complex> output) const
 {
-    if (inputSize != ContextBase::size())
+    if (input.size() != ContextBase::size())
         throw Error("Number of input values doesn't match context size.");
 
-    if (outputSize != inputSize)
+    if (output.size() != input.size())
         throw Error("Number of output values must be equal to number of input values.");
+
+    if (output.data() == input.data())
+        throw Error("Input and output buffers must be distinct.");
 }
 
 // ============================================================================================== //
@@ -934,8 +959,9 @@ sft_result sft_create_real_context(size_t size, sft_real_context** context)
         *context = new sft_real_context {{ size }};
         return SFT_SUCCESS;
     }
-    catch (const std::exception&)
+    catch (const std::exception& e)
     {
+        logError(e.what());
         *context = nullptr;
         return SFT_INVALID_SIZE;
     }
@@ -966,8 +992,13 @@ void sft_transform_real(const sft_real_context* context,
     // Compatible layout guaranteed by C++ standard
     auto out = reinterpret_cast<Complex*>(output);
 
-    context->context.transform(Span<const Real>(input, realSize),
-                               Span<Complex>(out, complexSize));
+    try {
+        context->context.transform(Span<const Real>(input, realSize),
+                                   Span<Complex>(out, complexSize));
+    }
+    catch (const std::exception& e) {
+        logError(e.what());
+    }
 }
 
 // ---------------------------------------------------------------------------------------------- //
@@ -981,8 +1012,13 @@ void sft_transform_inverse_real(const sft_real_context* context,
     // Compatible layout guaranteed by C++ standard
     auto in = reinterpret_cast<const Complex*>(input);
 
-    context->context.transformInverse(Span<const Complex>(in, complexSize),
-                                      Span<Real>(output, realSize));
+    try {
+        context->context.transformInverse(Span<const Complex>(in, complexSize),
+                                          Span<Real>(output, realSize));
+    }
+    catch (const std::exception& e) {
+        logError(e.what());
+    }
 }
 
 
@@ -1003,8 +1039,9 @@ sft_result sft_create_complex_context(size_t size, sft_complex_context** context
         *context = new sft_complex_context {{ size }};
         return SFT_SUCCESS;
     }
-    catch (const std::exception&)
+    catch (const std::exception& e)
     {
+        logError(e.what());
         *context = nullptr;
         return SFT_INVALID_SIZE;
     }
@@ -1035,8 +1072,13 @@ void sft_transform_complex(const sft_complex_context* context,
     auto in = reinterpret_cast<const Complex*>(input);
     auto out = reinterpret_cast<Complex*>(output);
 
-    context->context.transform(Span<const Complex>(in, size),
-                               Span<Complex>(out, size));
+    try {
+        context->context.transform(Span<const Complex>(in, size),
+                                   Span<Complex>(out, size));
+    }
+    catch (const std::exception& e) {
+        logError(e.what());
+    }
 }
 
 // ---------------------------------------------------------------------------------------------- //
@@ -1050,8 +1092,13 @@ void sft_transform_inverse_complex(const sft_complex_context* context,
     auto in = reinterpret_cast<const Complex*>(input);
     auto out = reinterpret_cast<Complex*>(output);
 
-    context->context.transformInverse(Span<const Complex>(in, size),
-                                      Span<Complex>(out, size));
+    try {
+        context->context.transformInverse(Span<const Complex>(in, size),
+                                          Span<Complex>(out, size));
+    }
+    catch (const std::exception& e) {
+        logError(e.what());
+    }
 }
 
-// ---------------------------------------------------------------------------------------------- //
+// ============================================================================================== //

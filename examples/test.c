@@ -5,7 +5,7 @@
 //  Author:                                                                                       //
 //  Marcel Hasler <marcel.hasler@h-brs.de>                                                        //
 //                                                                                                //
-//  Copyright (c) 2020 - 2021                                                                     //
+//  Copyright (c) 2020 - 2022                                                                     //
 //  Bonn-Rhein-Sieg University of Applied Sciences                                                //
 //                                                                                                //
 //  This library is free software: you can redistribute it and/or modify it under the terms of    //
@@ -54,7 +54,7 @@ int test()
     for (size_t i = 0; i < INPUT_SIZE; ++i)
     {
         input[i].real = 0.5 * sin(TWO_PI * i * (1.0 / SAMPLE_RATE) * FREQUENCY) + 0.5;
-        input[i].imag = 0.0;
+        input[i].imag = 0.5 * cos(TWO_PI * i * (1.0 / SAMPLE_RATE) * FREQUENCY) + 0.5;
     }
 
     sft_transform_complex(context, input, output);

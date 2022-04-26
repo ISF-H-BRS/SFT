@@ -1,3 +1,12 @@
+Version 1.0.2
+-------------
+
+* Fix missing conjugation in complex-valued inverse transform
+* Fix a wrong assertion in debug builds using the fixed-size version
+* Output exception messages to stderr when using the C interface
+* Parallelize more pre- and postprocessing loops
+* Add optional benchmark programs
+
 Version 1.0.1
 -------------
 

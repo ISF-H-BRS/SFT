@@ -5,7 +5,7 @@
 //  Author:                                                                                       //
 //  Marcel Hasler <marcel.hasler@h-brs.de>                                                        //
 //                                                                                                //
-//  Copyright (c) 2020 - 2021                                                                     //
+//  Copyright (c) 2020 - 2022                                                                     //
 //  Bonn-Rhein-Sieg University of Applied Sciences                                                //
 //                                                                                                //
 //  This library is free software: you can redistribute it and/or modify it under the terms of    //
@@ -34,12 +34,13 @@ namespace {
     constexpr size_t SampleRate = 1'000'000;
     constexpr double Frequency = 10'000.0;
     constexpr double TwoPi = 2.0 * 3.14159265358979323846;
+
+    using TimeUnit = std::chrono::microseconds;
 }
 
 // ---------------------------------------------------------------------------------------------- //
 
-template <typename T>
-void makeSignal(sft::Span<T> signal)
+void makeSignal(sft::Span<sft::Real> signal)
 {
     for (size_t i = 0; i < signal.size(); ++i)
         signal[i] = 0.5 * std::sin(TwoPi * i * (1.0 / SampleRate) * Frequency) + 0.5;
@@ -47,8 +48,19 @@ void makeSignal(sft::Span<T> signal)
 
 // ---------------------------------------------------------------------------------------------- //
 
+void makeSignal(sft::Span<sft::Complex> signal)
+{
+    for (size_t i = 0; i < signal.size(); ++i)
+    {
+        signal[i].real(0.5 * std::sin(TwoPi * i * (1.0 / SampleRate) * Frequency) + 0.5);
+        signal[i].imag(0.5 * std::cos(TwoPi * i * (1.0 / SampleRate) * Frequency) + 0.5);
+    }
+}
+
+// ---------------------------------------------------------------------------------------------- //
+
 template <typename F>
-auto measureTime(F func) -> unsigned int
+auto measureTime(F func) -> TimeUnit::rep
 {
     using Clock = std::chrono::steady_clock;
 
@@ -56,7 +68,7 @@ auto measureTime(F func) -> unsigned int
     func();
     auto tp2 = Clock::now();
 
-    return std::chrono::duration_cast<std::chrono::microseconds>(tp2 - tp1).count();
+    return std::chrono::duration_cast<TimeUnit>(tp2 - tp1).count();
 }
 
 // ---------------------------------------------------------------------------------------------- //
@@ -70,7 +82,7 @@ void test()
     std::vector<sft::Complex> output(InputSize);
     std::vector<sft::Complex> inverse(InputSize);
 
-    makeSignal<sft::Complex>(input);
+    makeSignal(input);
 
     std::clog << "Forward elapsed time: "
               << measureTime([&]{ context.transform(input, output); })
@@ -111,7 +123,7 @@ void test()
 
     std::vector<sft::Complex> output(InputSize/2 + 1);
 
-    makeSignal<sft::Real>(input);
+    makeSignal(input);
 
     std::clog << "Forward elapsed time: "
               << measureTime([&]{ context.transform(input, output); })
